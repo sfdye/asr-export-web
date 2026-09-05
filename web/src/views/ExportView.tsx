@@ -55,7 +55,7 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
     return (
       <div className="card">
         <h1>Preparing your zip…</h1>
-        <p className="muted">Keep this page open — you can also come back later (the link works for 24 hours).</p>
+        <p className="muted">Keep this page open — or bookmark it and come back later (it works for 24 hours).</p>
         <div className={`progress-track ${pct === null ? 'indeterminate' : ''}`}>
           {pct !== null && <div className="progress-fill" style={{ width: `${pct}%` }} />}
         </div>

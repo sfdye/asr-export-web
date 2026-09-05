@@ -17,6 +17,13 @@ export function App() {
   const [jobId, setJobId] = useState<string | null>(null);
 
   useEffect(() => {
+    // resuming a bookmarked export? the job page needs no session
+    const jobParam = new URLSearchParams(window.location.search).get('job');
+    if (jobParam) {
+      setJobId(jobParam);
+      setStep('export');
+      return;
+    }
     // resume straight into the wizard if the cookie session is still valid
     api
       .me()
@@ -67,6 +74,7 @@ export function App() {
     setError(null);
     try {
       const id = await api.createExport(categoryIds);
+      window.history.replaceState(null, '', `/?job=${id}`);
       setJobId(id);
       setStep('export');
     } catch (e) {
@@ -75,6 +83,7 @@ export function App() {
   }
 
   async function handleExportFinished() {
+    window.history.replaceState(null, '', '/');
     setJobId(null);
     await loadCatalog();
   }
