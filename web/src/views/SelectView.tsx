@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, formatBytes, type Catalog } from '../api.js';
 
 export function SelectView({
@@ -45,19 +45,40 @@ export function SelectView({
       else next.add(id);
       return next;
     });
-    if (!sizeState[id]) void loadSizes(id);
+    void loadSizes(id);
   }
 
+  const sizeJobs = useRef(new Set<number>());
+
+  // fetch a category's doc sizes once; failures are retried on next expand
   async function loadSizes(catId: number) {
+    if (sizeJobs.current.has(catId)) return;
+    sizeJobs.current.add(catId);
     setSizeState((s) => ({ ...s, [catId]: 'loading' }));
     try {
       const sz = await api.sizes(catId);
       setSizes((s) => ({ ...s, [catId]: sz }));
       setSizeState((s) => ({ ...s, [catId]: 'done' }));
     } catch {
+      sizeJobs.current.delete(catId);
       setSizeState((s) => ({ ...s, [catId]: 'error' }));
     }
   }
+
+  // estimate the zip size on page load: walk all categories sequentially
+  // (the server HEADs 4 docs at a time), totals fill in as they arrive
+  useEffect(() => {
+    let stop = false;
+    void (async () => {
+      for (const c of categories) {
+        if (stop) return;
+        await loadSizes(c.id);
+      }
+    })();
+    return () => {
+      stop = true;
+    };
+  }, [categories]);
 
   function docSize(catId: number, docId: number, kind: string): string {
     if (kind !== 'file') return '';
@@ -73,11 +94,12 @@ export function SelectView({
     return Object.values(sz).reduce((n, v) => n + v, 0);
   }
 
+  const selCats = useMemo(() => categories.filter((c) => checked.has(c.id)), [categories, checked]);
+  const estimating = selCats.some((c) => sizeState[c.id] === 'loading');
   const selectedBytes = useMemo(() => {
-    const picked = categories.filter((c) => checked.has(c.id));
-    if (!picked.length || !picked.every((c) => sizeState[c.id] === 'done')) return null;
-    return picked.reduce((n, c) => n + (catTotal(c.id) ?? 0), 0);
-  }, [categories, checked, sizeState]);
+    if (!selCats.length || !selCats.every((c) => sizeState[c.id] === 'done' || sizeState[c.id] === 'error')) return null;
+    return selCats.reduce((n, c) => n + (catTotal(c.id) ?? 0), 0);
+  }, [selCats, sizeState]);
 
   async function start() {
     if (busy || checked.size === 0) return;
@@ -165,7 +187,7 @@ export function SelectView({
       <div className="sticky-footer">
         <div className="muted small">
           {selectedDocs} of {totalDocs} documents selected
-          {selectedBytes != null ? ` · ≈ ${formatBytes(selectedBytes)} zip` : ''}
+          {selectedBytes != null ? ` · ≈ ${formatBytes(selectedBytes)} zip` : estimating ? ' · estimating size…' : ''}
         </div>
         <button className="primary" onClick={start} disabled={busy || checked.size === 0}>
           {busy ? 'Starting…' : `Export ${selectedDocs} documents`}

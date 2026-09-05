@@ -14,6 +14,7 @@ interface CacheEntry {
   at: number;
   categories: CatalogEntry[];
   sizes: Map<number, Record<number, number>>;
+  inflight: Map<number, Promise<Record<number, number>>>;
 }
 
 const CACHE_TTL = 5 * 60 * 1000;
@@ -34,7 +35,7 @@ async function entriesFor(blob: SessionBlob, svc: Services): Promise<EntriesResu
   const client = clientFromSession(blob, svc.cfg, svc.transport);
   try {
     const entries = dedupCatalog(await client.catalog(block));
-    cache.set(blob.email, { at: Date.now(), categories: entries, sizes: new Map() });
+    cache.set(blob.email, { at: Date.now(), categories: entries, sizes: new Map(), inflight: new Map() });
     return { ok: true, entries };
   } catch (e) {
     const status = (e as { status?: number }).status;
@@ -84,20 +85,31 @@ export function catalogRoutes(svc: Services): Hono {
     const cell = cache.get(blob.email);
     const cached = cell?.sizes.get(categoryId);
     if (cached) return c.json({ sizes: cached });
+    const running = cell?.inflight.get(categoryId);
+    if (running) return c.json({ sizes: await running });
 
     const client = clientFromSession(blob, svc.cfg, svc.transport);
     const files = entry.docs
       .filter((d) => docKind(d) === 'file' && d.filePath)
       .map((d) => ({ id: d.id, url: d.filePath as string }));
-    const sizes: Record<number, number> = {};
-    for (let i = 0; i < files.length; i += HEAD_CONCURRENCY) {
-      await Promise.all(files.slice(i, i + HEAD_CONCURRENCY).map(async (f) => {
-        const len = await client.headFileLength(f.url);
-        if (len != null) sizes[f.id] = len;
-      }));
+    const job = (async () => {
+      const sizes: Record<number, number> = {};
+      for (let i = 0; i < files.length; i += HEAD_CONCURRENCY) {
+        await Promise.all(files.slice(i, i + HEAD_CONCURRENCY).map(async (f) => {
+          const len = await client.headFileLength(f.url);
+          if (len != null) sizes[f.id] = len;
+        }));
+      }
+      return sizes;
+    })();
+    cell?.inflight.set(categoryId, job);
+    try {
+      const sizes = await job;
+      cell?.sizes.set(categoryId, sizes);
+      return c.json({ sizes });
+    } finally {
+      cell?.inflight.delete(categoryId);
     }
-    cell?.sizes.set(categoryId, sizes);
-    return c.json({ sizes });
   });
 
   return app;
