@@ -78,4 +78,12 @@ describe('HabitapClient against the mock world', () => {
     const res = await new HabitapClient(cfg, transport).login('resident@example.com', 'password1', 'totally-fake-iid');
     expect(res.status).toBe('otp_required'); // 409 handled internally, then 452
   });
+
+  it('headFileLength reports sizes without downloading; failures yield null', async () => {
+    const client = new HabitapClient(cfg, new MockTransport());
+    expect(await client.headFileLength('https://cdn.mock/doc-101.pdf')).toBe(120 * 1024);
+    expect(await client.headFileLength('https://cdn.mock/doc-102.pdf')).toBe(40 * 1024);
+    expect(await client.headFileLength('https://cdn.mock/fail.pdf')).toBeNull();
+    expect(await client.headFileLength('https://other.mock/file.pdf')).toBeNull();
+  });
 });

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Catalog } from '../api.js';
+import { api, formatBytes, type Catalog } from '../api.js';
 
 export function SelectView({
   catalog,
@@ -14,6 +14,9 @@ export function SelectView({
 }) {
   const { account, categories } = catalog;
   const [checked, setChecked] = useState<Set<number>>(() => new Set(categories.map((c) => c.id)));
+  const [openCats, setOpenCats] = useState<Set<number>>(new Set());
+  const [sizes, setSizes] = useState<Record<number, Record<string, number>>>({});
+  const [sizeState, setSizeState] = useState<Record<number, 'loading' | 'done' | 'error'>>({});
   const [busy, setBusy] = useState(false);
 
   const selectedDocs = useMemo(
@@ -34,6 +37,47 @@ export function SelectView({
   function setAll(on: boolean) {
     setChecked(on ? new Set(categories.map((c) => c.id)) : new Set());
   }
+
+  function toggleOpen(id: number) {
+    setOpenCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    if (!sizeState[id]) void loadSizes(id);
+  }
+
+  async function loadSizes(catId: number) {
+    setSizeState((s) => ({ ...s, [catId]: 'loading' }));
+    try {
+      const sz = await api.sizes(catId);
+      setSizes((s) => ({ ...s, [catId]: sz }));
+      setSizeState((s) => ({ ...s, [catId]: 'done' }));
+    } catch {
+      setSizeState((s) => ({ ...s, [catId]: 'error' }));
+    }
+  }
+
+  function docSize(catId: number, docId: number, kind: string): string {
+    if (kind !== 'file') return '';
+    if (sizeState[catId] !== 'done') return '…';
+    const n = sizes[catId]?.[String(docId)];
+    return n ? formatBytes(n) : '';
+  }
+
+  function catTotal(catId: number): number | null {
+    if (sizeState[catId] !== 'done') return null;
+    const sz = sizes[catId];
+    if (!sz) return null;
+    return Object.values(sz).reduce((n, v) => n + v, 0);
+  }
+
+  const selectedBytes = useMemo(() => {
+    const picked = categories.filter((c) => checked.has(c.id));
+    if (!picked.length || !picked.every((c) => sizeState[c.id] === 'done')) return null;
+    return picked.reduce((n, c) => n + (catTotal(c.id) ?? 0), 0);
+  }, [categories, checked, sizeState]);
 
   async function start() {
     if (busy || checked.size === 0) return;
@@ -72,31 +116,56 @@ export function SelectView({
       </div>
 
       <ul className="categories">
-        {categories.map((c) => (
-          <li key={c.id} className={checked.has(c.id) ? 'checked' : ''}>
-            <label className="category-row">
-              <input type="checkbox" checked={checked.has(c.id)} onChange={() => toggle(c.id)} />
-              <span className="category-name">{c.name}</span>
-              <span className="category-count">{c.count}</span>
-            </label>
-            <details className="doc-list">
-              <summary>list</summary>
-              <ul>
-                {c.docs.map((d) => (
-                  <li key={d.id} className={d.kind === 'link' ? 'link-doc' : ''}>
-                    {d.kind === 'link' ? '↗ ' : ''}
-                    {d.caption || '(untitled)'}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          </li>
-        ))}
+        {categories.map((c) => {
+          const open = openCats.has(c.id);
+          const total = catTotal(c.id);
+          return (
+            <li key={c.id} className={checked.has(c.id) ? 'checked' : ''}>
+              <div className="category-row">
+                <label className="category-main">
+                  <input type="checkbox" checked={checked.has(c.id)} onChange={() => toggle(c.id)} />
+                  <span className="category-name">{c.name}</span>
+                </label>
+                <span className="category-count">
+                  {c.count}
+                  {total != null ? ` · ${formatBytes(total)}` : ''}
+                </span>
+                <button
+                  type="button"
+                  className="expand"
+                  aria-expanded={open}
+                  aria-label={open ? `Hide documents in ${c.name}` : `Show documents in ${c.name}`}
+                  onClick={() => toggleOpen(c.id)}
+                >
+                  <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+                    <path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className={`docs${open ? ' open' : ''}`}>
+                <div className="docs-inner">
+                  <ul>
+                    {c.docs.map((d) => (
+                      <li key={d.id} className={d.kind === 'link' ? 'link-doc' : ''}>
+                        <span className="doc-caption">
+                          {d.kind === 'link' ? '↗ ' : ''}
+                          {d.caption || '(untitled)'}
+                        </span>
+                        <span className="doc-size">{docSize(c.id, d.id, d.kind)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       <div className="sticky-footer">
         <div className="muted small">
           {selectedDocs} of {totalDocs} documents selected
+          {selectedBytes != null ? ` · ≈ ${formatBytes(selectedBytes)} zip` : ''}
         </div>
         <button className="primary" onClick={start} disabled={busy || checked.size === 0}>
           {busy ? 'Starting…' : `Export ${selectedDocs} documents`}

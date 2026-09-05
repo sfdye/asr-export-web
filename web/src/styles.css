@@ -230,13 +230,27 @@ ul.categories > li:last-child {
 .category-row {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.category-main {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  flex: 1;
+  min-width: 0;
   font-weight: 500;
+  font-size: 16px;
+  color: var(--ink);
   margin: 0;
   cursor: pointer;
 }
 
-.category-row input[type='checkbox'] {
+ul.categories > li:not(.checked) .category-main {
+  color: var(--muted);
+}
+
+.category-main input[type='checkbox'] {
   width: 20px;
   height: 20px;
   accent-color: var(--navy);
@@ -245,40 +259,92 @@ ul.categories > li:last-child {
 
 .category-name {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .category-count {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
   background: var(--bg);
   border-radius: 999px;
-  padding: 1px 10px;
+  padding: 2px 10px;
+  white-space: nowrap;
 }
 
-.doc-list {
-  margin: 6px 0 0 32px;
-}
-
-.doc-list summary {
+.expand {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  margin: 0;
+  border-radius: 999px;
+  background: none;
   color: var(--muted);
-  font-size: 13px;
+  display: grid;
+  place-items: center;
   cursor: pointer;
 }
 
-.doc-list ul {
-  list-style: none;
-  padding: 8px 0 0;
-  margin: 0;
-  font-size: 13.5px;
-  color: var(--muted);
+.expand:hover {
+  background: var(--bg);
+  color: var(--navy);
 }
 
-.doc-list li {
-  padding: 2px 0;
+.expand svg {
+  transition: transform 0.2s ease;
+}
+
+.expand[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.docs {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.docs.open {
+  grid-template-rows: 1fr;
+}
+
+.docs-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.docs-inner ul {
+  list-style: none;
+  margin: 8px 0 2px 44px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.docs-inner li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 3px 0;
+}
+
+.doc-caption {
   overflow-wrap: anywhere;
 }
 
-.link-doc {
+.doc-size {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.link-doc .doc-caption {
   color: var(--warn);
 }
 

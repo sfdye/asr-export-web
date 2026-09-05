@@ -86,10 +86,15 @@ export class MockTransport implements Transport {
 
     // ---- CDN ----
     if (u.hostname === 'cdn.mock') {
-      if (u.pathname === '/fail.pdf') return res(500, { 'content-type': 'text/plain' }, 'mock CDN failure');
-      if (u.pathname === '/slow.pdf') return this.slowTrickle(fakePdf('slow', 900), 40);
-      if (u.pathname === '/doc-101.pdf') return this.fileRes(fakePdf('doc-101', 120));
-      return this.fileRes(fakePdf(u.pathname.split('/')[1] ?? 'x', 40));
+      const isHead = method === 'HEAD';
+      if (u.pathname === '/fail.pdf') return res(500, { 'content-type': 'text/plain' }, isHead ? '' : 'mock CDN failure');
+      const buf =
+        u.pathname === '/slow.pdf' ? fakePdf('slow', 900)
+        : u.pathname === '/doc-101.pdf' ? fakePdf('doc-101', 120)
+        : fakePdf(u.pathname.split('/')[1] ?? 'x', 40);
+      if (isHead) return res(200, { 'content-type': 'application/pdf', 'content-length': String(buf.length) }, '');
+      if (u.pathname === '/slow.pdf') return this.slowTrickle(buf, 40);
+      return this.fileRes(buf);
     }
 
     // ---- login ----

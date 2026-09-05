@@ -68,6 +68,13 @@ export const api = {
     return json<Catalog>(await fetch('/api/catalog'));
   },
 
+  async sizes(categoryId: number): Promise<Record<string, number>> {
+    const { sizes } = await json<{ sizes: Record<string, number> }>(
+      await fetch(`/api/catalog/sizes?categoryId=${categoryId}`),
+    );
+    return sizes;
+  },
+
   async createExport(categoryIds: number[]): Promise<string> {
     const { id } = await json<{ id: string }>(
       await fetch('/api/export', {

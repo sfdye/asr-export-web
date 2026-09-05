@@ -213,6 +213,18 @@ export class HabitapClient {
     const len = res.headers['content-length'];
     return { stream: res.stream, length: len ? Number(len) : null };
   }
+
+  /** Content-Length via HEAD — per-doc size without downloading (null on failure). */
+  async headFileLength(url: string): Promise<number | null> {
+    try {
+      const res = await this.transport.request(url, { method: 'HEAD', headers: { 'User-Agent': this.cfg.userAgent }, timeoutMs: 15000 });
+      if (res.status !== 200) return null;
+      const len = res.headers['content-length'];
+      return len ? Number(len) : null;
+    } catch {
+      return null;
+    }
+  }
 }
 
 function extractInstallationId(j: Record<string, unknown>): string | null {
