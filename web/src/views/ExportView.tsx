@@ -134,7 +134,7 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
       <a className="primary download" href={downloadUrl(job.id)} download={job.zipName}>
         Download zip
       </a>
-      <p className="muted small">The download link works for 24 hours and supports pause/resume.</p>
+      <p className="muted small">The download link works for 24 hours — after that your zip is deleted from our server.</p>
       {failedList.length > 0 && (
         <details className="failed-details">
           <summary className="warn">
