@@ -11,12 +11,15 @@ set -uo pipefail
 
 TIMEOUT=${1:-1800} # 30 min: a full export takes minutes, not hours
 DEADLINE=$(( $(date +%s) + TIMEOUT ))
+# PORT comes from the unit's EnvironmentFile when systemd runs this; fall
+# back to the production default for manual runs
+URL="http://localhost:${PORT:-3000}/api/health"
 
 while :; do
-  body=$(curl -fsS -m 5 http://localhost:3000/api/health 2>/dev/null) || exit 0
+  body=$(curl -fsS -m 5 "$URL" 2>/dev/null) || exit 0
   active=$(printf '%s' "$body" | grep -o '"activeJobs":[0-9]*' | head -1 | grep -o '[0-9]*$')
   if [ "${active:-1}" = "0" ]; then
-    [ -t 1 ] && echo "[drain] no active jobs"
+    echo "[drain] no active jobs"
     exit 0
   fi
   if [ "$(date +%s)" -ge "$DEADLINE" ]; then

@@ -49,25 +49,25 @@ describe('job record store', () => {
     expect(loadJobRecords().some((j) => j.id === job.id)).toBe(false);
   });
 
-  it('never writes queued jobs; a running marker loads back as interrupted', () => {
-    const queued = makeJob('queued');
-    saveJobRecord(queued);
-    expect(fs.existsSync(recordPath(queued.id))).toBe(false);
+  it('queued and running markers both load back as interrupted', () => {
+    // the route saves this shape at creation, the worker at start
+    for (const status of ['queued', 'running'] as const) {
+      const job = makeJob(status);
+      if (status === 'running') {
+        job.zipPath = path.join(zipsDir, `${job.id}.zip`);
+        fs.writeFileSync(job.zipPath!, 'partial-zip');
+      }
+      saveJobRecord(job);
+      expect(JSON.parse(fs.readFileSync(recordPath(job.id), 'utf8')).blob).toBeUndefined();
 
-    // the worker saves this shape at job start
-    const running = makeJob('running');
-    running.zipPath = path.join(zipsDir, `${running.id}.zip`);
-    fs.writeFileSync(running.zipPath!, 'partial-zip');
-    saveJobRecord(running);
-    expect(JSON.parse(fs.readFileSync(recordPath(running.id), 'utf8')).blob).toBeUndefined();
-
-    // restart: loadJobRecords coerces it to a clear failure and drops the partial zip
-    const rec = loadJobRecords().find((j) => j.id === running.id);
-    expect(rec?.status).toBe('failed');
-    expect(rec?.error).toBe(INTERRUPTED_ERROR);
-    expect(rec?.zipPath).toBeUndefined();
-    expect(fs.existsSync(running.zipPath!)).toBe(false);
-    removeJobRecord(running.id);
+      // restart: loadJobRecords coerces it to a clear failure and drops the partial zip
+      const rec = loadJobRecords().find((j) => j.id === job.id);
+      expect(rec?.status).toBe('failed');
+      expect(rec?.error).toBe(INTERRUPTED_ERROR);
+      expect(rec?.zipPath).toBeUndefined();
+      if (status === 'running') expect(fs.existsSync(job.zipPath!)).toBe(false);
+      removeJobRecord(job.id);
+    }
   });
 
   it('skips broken record files without throwing', () => {
