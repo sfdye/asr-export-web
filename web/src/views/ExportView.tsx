@@ -102,7 +102,7 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
               </li>
             ))}
           </ul>
-          <p className="muted small">These are also listed inside the zip in FAILED.txt. Sign out and back in later to retry just the missing files.</p>
+          <p className="muted small">These are also listed inside the zip in FAILED.txt.</p>
         </details>
       )}
       <button className="link" onClick={onFinished}>Export something else</button>
