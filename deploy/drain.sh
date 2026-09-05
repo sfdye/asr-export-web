@@ -18,7 +18,10 @@ URL="http://localhost:${PORT:-3000}/api/health"
 while :; do
   body=$(curl -fsS -m 5 "$URL" 2>/dev/null) || exit 0
   active=$(printf '%s' "$body" | grep -o '"activeJobs":[0-9]*' | head -1 | grep -o '[0-9]*$')
-  if [ "${active:-1}" = "0" ]; then
+  # unexpected response — e.g. an older binary serving the SPA fallback for
+  # /api/health: waiting can never converge, so don't block the stop
+  [ -n "$active" ] || exit 0
+  if [ "$active" = "0" ]; then
     echo "[drain] no active jobs"
     exit 0
   fi
