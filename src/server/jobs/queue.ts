@@ -55,6 +55,12 @@ export class JobQueue {
     return [...this.jobs.values()].filter((j) => j.email === email);
   }
 
+  activeCount(): number {
+    let n = 0;
+    for (const j of this.jobs.values()) if (j.status === 'queued' || j.status === 'running') n++;
+    return n;
+  }
+
   /** jobs past their TTL — zips deleted, records dropped */
   sweep(ttlMs: number, now = Date.now()): { ids: string[]; freedBytes: number } {
     const ids: string[] = [];

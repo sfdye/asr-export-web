@@ -80,8 +80,14 @@ Redeploy:
 ```bash
 cd ~/asr-export-web
 git pull --ff-only && npm ci && npm run build && npm prune --omit=dev
-sudo systemctl restart asr-export
+sudo systemctl restart asr-export   # drains first: waits for in-flight exports
 ```
+
+Restarts and reboots never kill a running export: the service's `ExecStop`
+hook (`deploy/drain.sh`, unit reference in `deploy/asr-export.service`)
+polls `/api/health` until no job is queued or running (up to 30 min, then
+it gives up and stops anyway). Hard crashes (OOM, panic) can't drain —
+those jobs surface as failed with a re-run hint on the next boot.
 
 The login rate limit keys on the last `x-forwarded-for` entry, so the app
 must see the real client address there. Production sits behind Cloudflare
