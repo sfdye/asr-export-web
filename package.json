@@ -8,7 +8,7 @@
     "document-export"
   ],
   "license": "MIT",
-  "author": "Liuyang Wan (sfdye)",
+  "author": "Liuyang Wan",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sfdye/asr-export-web.git"
