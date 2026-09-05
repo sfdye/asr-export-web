@@ -83,8 +83,12 @@ git pull --ff-only && npm ci && npm run build && npm prune --omit=dev
 sudo systemctl restart asr-export
 ```
 
-Behind any reverse proxy, make sure it appends the client address to
-`x-forwarded-for` (the login rate limit trusts the last entry).
+The login rate limit keys on the last `x-forwarded-for` entry, so the app
+must see the real client address there. Production sits behind Cloudflare
+(which would otherwise leave a CF edge IP as the last entry), so Caddy
+rewrites the header from `cf-connecting-ip` (see `deploy/Caddyfile`) and the
+droplet firewall restricts 80/443 to Cloudflare's IP ranges, so the header
+can't be forged by hitting the droplet IP directly.
 
 ## License
 
