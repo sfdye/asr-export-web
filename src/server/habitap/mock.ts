@@ -10,7 +10,7 @@ import type { AccountInfo } from './types.js';
 //   accepted password: anything except "wrong"
 //   OTP for new devices: 111111
 //   issued installationIds are remembered → next login skips OTP
-//   /mock-cdn/fail.pdf always 500s (exercises FAILED.txt)
+//   /mock-cdn/fail.pdf always 500s (exercises the failed-file report)
 //   /mock-cdn/slow.pdf trickles slowly (exercises progress)
 
 const OTP = '111111';

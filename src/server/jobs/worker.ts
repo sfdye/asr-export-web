@@ -11,7 +11,7 @@ import { StoreZipWriter } from './zip.js';
 // The export worker: walks the selected categories, fetches each document
 // from the Habitap CDN (paced, retried — CLI parity: 0.4 s pacing, 3 tries,
 // 1.5 s × attempt backoff), and writes everything into a store-only zip.
-// Files that could not be fetched are listed in FAILED.txt at the zip root.
+// Files that could not be fetched are reported on the job (shown in the UI).
 
 export interface WorkerOpts {
   paceMs?: number; // pause between documents (default 400, CLI parity)
@@ -84,15 +84,6 @@ export async function runExportJob(
 
         if (n < job.progress.total) await sleep(paceMs); // polite pacing
       }
-    }
-
-    if (job.failedFiles.length > 0) {
-      const text =
-        'Some documents could not be downloaded.\n' +
-        'Sign in again later and re-export — everything else is in this zip.\n\n' +
-        job.failedFiles.map((f) => `- ${f.path} — ${f.reason}`).join('\n') +
-        '\n';
-      writer.addBuffer('FAILED.txt', Buffer.from(text, 'utf8'));
     }
 
     const { size } = writer.finish();

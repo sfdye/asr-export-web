@@ -102,7 +102,6 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
               </li>
             ))}
           </ul>
-          <p className="muted small">A copy of this list is saved inside the zip (FAILED.txt, at the top level) — it stays with the zip after this page expires.</p>
         </details>
       )}
       <button className="link" onClick={onFinished}>Export something else</button>

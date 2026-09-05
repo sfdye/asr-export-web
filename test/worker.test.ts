@@ -43,7 +43,7 @@ function makeJob(blob: SessionBlob, categoryIds: number[]): ExportJob {
 }
 
 describe('export worker (end-to-end against mock Habitap)', () => {
-  it('builds a valid zip: files, .url link, FAILED.txt for the failing doc', async () => {
+  it('builds a valid zip: files, .url link; failing doc reported on the job', async () => {
     const transport = new MockTransport();
     const blob = await loginBlob(transport);
     const job = makeJob(blob, [1, 2, 3]);
@@ -63,19 +63,16 @@ describe('export worker (end-to-end against mock Habitap)', () => {
     const entries = parseZip(buf);
     const names = entries.map((e) => e.name);
 
-    // 9 CDN files + 1 external link (.url) + FAILED.txt
+    // 9 CDN files + 1 external link (.url)
     expect(names).toContain('Drawings/Floor Plan 12-34.pdf');
     expect(names).toContain('Drawings/M&E Layout.pdf'); // the slow-trickle doc
     expect(names).toContain('Operating Manuals & Warranties/Novade Portal.url');
-    expect(names).toContain('FAILED.txt');
+    expect(names).not.toContain('FAILED.txt');
     expect(names.filter((n) => n.endsWith('.pdf')).length).toBe(9);
-    expect(names.length).toBe(11);
+    expect(names.length).toBe(10);
 
     const urlEntry = entries.find((e) => e.name.endsWith('.url'))!;
     expect(urlEntry.data.toString()).toBe('https://novade.net/\n');
-
-    const failedEntry = entries.find((e) => e.name === 'FAILED.txt')!;
-    expect(failedEntry.data.toString()).toContain('Corrupted Scan');
   }, 20000);
 
   it('selects only the requested categories', async () => {
