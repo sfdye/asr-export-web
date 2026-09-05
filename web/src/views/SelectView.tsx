@@ -146,12 +146,14 @@ export function SelectView({
               <div className="category-row">
                 <label className="category-main">
                   <input type="checkbox" checked={checked.has(c.id)} onChange={() => toggle(c.id)} />
-                  <span className="category-name">{c.name}</span>
+                  <span className="category-text">
+                    <span className="category-name">{c.name}</span>
+                    <span className="category-sub">
+                      {c.count} {c.count === 1 ? 'document' : 'documents'}
+                      {total != null ? ` · ${formatBytes(total)}` : ''}
+                    </span>
+                  </span>
                 </label>
-                <span className="category-count">
-                  {c.count}
-                  {total != null ? ` · ${formatBytes(total)}` : ''}
-                </span>
                 <button
                   type="button"
                   className="expand"
