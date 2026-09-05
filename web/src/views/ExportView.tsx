@@ -1,5 +1,44 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api, downloadUrl, formatBytes, type JobView } from '../api.js';
+
+// one-shot celebratory confetti on the done screen; CSS-only, no deps
+function Confetti() {
+  const COLORS = ['#c9a227', '#17324e', '#1e7d43', '#e08b3e', '#8fb4d9'];
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 80 }, (_, i) => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 0.8,
+        duration: 2.4 + Math.random() * 1.8,
+        color: COLORS[i % COLORS.length],
+        width: 6 + Math.random() * 5,
+        height: 8 + Math.random() * 6,
+        round: Math.random() < 0.25,
+        dx: `${(Math.random() * 2 - 1) * 140}px`,
+        rot: `${(Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 540)}deg`,
+      })),
+    [],
+  );
+  return (
+    <div className="confetti" aria-hidden="true">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          style={{
+            left: `${p.left}%`,
+            width: p.width,
+            height: p.round ? p.width : p.height,
+            background: p.color,
+            borderRadius: p.round ? '50%' : '1px',
+            animation: `confetti-fall ${p.duration}s linear ${p.delay}s forwards`,
+            ['--dx' as string]: p.dx,
+            ['--rot' as string]: p.rot,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onFinished: () => void; onFailed: () => void }) {
   const [job, setJob] = useState<JobView | null>(null);
@@ -87,6 +126,7 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
   const failedList = job.failedFiles ?? [];
   return (
     <div className="card center">
+      <Confetti />
       <h1>Your zip is ready</h1>
       <p className="muted">
         {job.progress.total - job.progress.failed} of {job.progress.total} documents{job.zipSize ? ` · ${formatBytes(job.zipSize)}` : ''}
