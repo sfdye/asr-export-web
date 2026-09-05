@@ -51,6 +51,10 @@ app.route('/api/auth', authRoutes(svc));
 app.route('/api/catalog', catalogRoutes(svc));
 app.route('/api/export', exportRoutes(svc));
 
+// liveness + drain signal for the ExecStop hook (deploy/drain.sh): an
+// activeJobs count of 0 means the service can stop without killing an export
+app.get('/api/health', (c) => c.json({ ok: true, activeJobs: queue.activeCount() }));
+
 // prune expired rate-limit windows occasionally
 setInterval(() => limiter.prune(), 15 * 60 * 1000).unref?.();
 
