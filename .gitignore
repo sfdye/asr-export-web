@@ -6,3 +6,4 @@ test-data/
 .env
 *.log
 .DS_Store
+.vite/
