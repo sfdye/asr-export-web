@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 export function OtpView({
   email,
@@ -13,7 +13,6 @@ export function OtpView({
 }) {
   const [otp, setOtp] = useState('');
   const [busy, setBusy] = useState(false);
-  const ref = useRef<HTMLInputElement>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,7 +33,6 @@ export function OtpView({
       <label>
         Code
         <input
-          ref={ref}
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"

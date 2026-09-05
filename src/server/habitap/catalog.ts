@@ -60,10 +60,3 @@ export function docKind(doc: HabitapDoc): DocKind {
   if ((doc.externalUrl ?? '').startsWith('http')) return 'link';
   return 'none';
 }
-
-export function docUrl(doc: HabitapDoc): string | null {
-  const kind = docKind(doc);
-  if (kind === 'file') return doc.filePath ?? null;
-  if (kind === 'link') return doc.externalUrl ?? null;
-  return null;
-}

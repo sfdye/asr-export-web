@@ -36,7 +36,6 @@ export interface ExportJob {
 export class JobQueue {
   private jobs = new Map<string, ExportJob>();
   private running = 0;
-  private waiters: Array<() => void> = [];
 
   constructor(
     private readonly run: (job: ExportJob) => Promise<void>,
@@ -87,8 +86,6 @@ export class JobQueue {
           void this.pump();
         });
     }
-    // when at capacity, resolve waiters (kept for future use / tests)
-    while (this.waiters.length) this.waiters.pop()?.();
   }
 }
 
