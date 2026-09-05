@@ -8,6 +8,8 @@ everything.
 Sister project: [asr-export](https://github.com/sfdye/asr-export) — the
 zero-server Python CLI for the same job.
 
+Live at **https://asr.sfdye.com**.
+
 ## How it works
 
 - **One small server** (Node 22 + TypeScript + [Hono](https://hono.dev), two
@@ -48,7 +50,7 @@ account (first login per browser sends a one-time code to your email).
 | `PORT` | `3001` | server port (dev only; the Vite dev server proxies `/api` to it) |
 | `DATA_DIR` | `.data` | zips, sweeper state, dev cookie key |
 | `COOKIE_KEY` | auto-generated in `DATA_DIR` | 32-byte base64 key sealing the session cookie — set explicitly in production (`openssl rand -base64 32`) |
-| `MOCK_HABITAT` | off | `1` = fixture Habitap (tests and local dev) |
+| `MOCK_HABITAP` | off | `1` = fixture Habitap (tests and local dev) |
 | `NODE_ENV` | — | `production` makes the session cookie `Secure` |
 
 ## Scripts
@@ -64,15 +66,31 @@ account (first login per browser sends a one-time code to your email).
 ## Deployment
 
 Runs anywhere Node 22 runs: `npm ci && npm run build && npm start`, with
-`COOKIE_KEY` set and `DATA_DIR` on persistent storage. A Dockerfile and
-Caddy (auto-HTTPS) setup are planned; behind any reverse proxy, make sure it
-appends the client address to `x-forwarded-for` (the login rate limit trusts
-the last entry).
+`COOKIE_KEY` set and `DATA_DIR` on persistent storage.
+
+Current production: a DigitalOcean droplet (Ubuntu 24.04) behind
+[Caddy](https://caddyserver.com) at `asr.sfdye.com` (auto-HTTPS, reverse
+proxying to `localhost:3000`). The app runs as a systemd service
+(`asr-export`, enabled so it starts on boot) with its environment —
+`PORT=3000`, `NODE_ENV=production`, `COOKIE_KEY`,
+`DATA_DIR=/var/lib/asr-export` — in `/etc/asr-export/env`.
+
+Redeploy:
+
+```bash
+cd ~/asr-export-web
+git pull --ff-only && npm ci && npm run build && npm prune --omit=dev
+sudo systemctl restart asr-export
+```
+
+Behind any reverse proxy, make sure it appends the client address to
+`x-forwarded-for` (the login rate limit trusts the last entry).
 
 ## Status
 
 Core app complete and verified end-to-end against a real account
-(~387 documents, ~171 MB). Deployment tooling in progress.
+(~387 documents, ~171 MB). Live in production at
+[asr.sfdye.com](https://asr.sfdye.com).
 
 ## License
 
