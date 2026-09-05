@@ -20,7 +20,7 @@ export interface FailedFile {
 export interface ExportJob {
   id: string;
   email: string;
-  blob: SessionBlob;
+  blob?: SessionBlob;
   categoryIds: number[];
   status: JobStatus;
   progress: JobProgress;
@@ -47,6 +47,11 @@ export class JobQueue {
     void this.pump();
   }
 
+  /** seed the map with records restored from disk (terminal jobs only) */
+  restore(jobs: ExportJob[]): void {
+    for (const j of jobs) this.jobs.set(j.id, j);
+  }
+
   get(id: string): ExportJob | undefined {
     return this.jobs.get(id);
   }
@@ -55,18 +60,26 @@ export class JobQueue {
     return [...this.jobs.values()].filter((j) => j.email === email);
   }
 
+  activeCount(): number {
+    let n = 0;
+    for (const j of this.jobs.values()) if (j.status === 'queued' || j.status === 'running') n++;
+    return n;
+  }
+
   /** jobs past their TTL — zips deleted, records dropped */
-  sweep(ttlMs: number, now = Date.now()): { ids: string[]; freedBytes: number } {
+  sweep(ttlMs: number, now = Date.now()): { ids: string[]; zipPaths: string[]; freedBytes: number } {
     const ids: string[] = [];
+    const zipPaths: string[] = [];
     let freedBytes = 0;
     for (const [id, job] of this.jobs) {
       if (now - job.createdAt > ttlMs && job.status !== 'running' && job.status !== 'queued') {
         ids.push(id);
+        if (job.zipPath) zipPaths.push(job.zipPath);
         freedBytes += job.zipSize ?? 0;
         this.jobs.delete(id);
       }
     }
-    return { ids, freedBytes };
+    return { ids, zipPaths, freedBytes };
   }
 
   all(): ExportJob[] {

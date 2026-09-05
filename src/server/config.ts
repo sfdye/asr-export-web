@@ -55,4 +55,6 @@ export const config: Config = {
 };
 
 export const zipsDir = path.join(dataDir, 'zips');
+export const jobsDir = path.join(dataDir, 'jobs');
 fs.mkdirSync(zipsDir, { recursive: true });
+fs.mkdirSync(jobsDir, { recursive: true });

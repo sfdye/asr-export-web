@@ -26,7 +26,10 @@ Live at **https://asr.sfdye.com**.
 - **Export**: documents are fetched from the Habitap CDN (paced and retried)
   into a store-only zip on the server. Progress is live; the download
   supports pause/resume (HTTP Range) and keeps working for 24 hours — the
-  export page can be bookmarked and revisited without logging in.
+  export page can be bookmarked and revisited without logging in. Job
+  records persist to `DATA_DIR`, so links survive server restarts; an
+  export interrupted mid-run by a restart is reported as failed with a
+  re-run hint instead of vanishing.
 - **Hygiene**: zips and job records are hard-deleted after 24 h; logins are
   rate-limited; jobs queue fairly (2 concurrent, max 2 active per user).
 
@@ -80,8 +83,15 @@ Redeploy:
 ```bash
 cd ~/asr-export-web
 git pull --ff-only && npm ci && npm run build && npm prune --omit=dev
-sudo systemctl restart asr-export
+sudo systemctl restart asr-export   # drains first: waits for in-flight exports
 ```
+
+Restarts and reboots wait for in-flight exports instead of killing them:
+the service's `ExecStop` hook (`deploy/drain.sh`, unit reference in
+`deploy/asr-export.service`) polls `/api/health` until no job is queued or
+running. Submissions during a drain extend the wait; after 30 min it stops
+anyway, and any job that hadn't finished surfaces as failed with a re-run
+hint on the next boot — the same fallback covers hard crashes (OOM, panic).
 
 The login rate limit keys on the last `x-forwarded-for` entry, so the app
 must see the real client address there. Production sits behind Cloudflare

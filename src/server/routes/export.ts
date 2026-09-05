@@ -3,6 +3,7 @@ import { Readable } from 'node:stream';
 import { Hono } from 'hono';
 import { getSession } from '../auth/session.js';
 import { newJobId, type ExportJob } from '../jobs/queue.js';
+import { saveJobRecord } from '../jobs/store.js';
 import type { Services } from '../services.js';
 
 const MAX_ACTIVE_JOBS_PER_EMAIL = 2;
@@ -40,6 +41,7 @@ export function exportRoutes(svc: Services): Hono {
       createdAt: Date.now(),
     };
     svc.queue.create(job);
+    saveJobRecord(job); // queued/running marker: a restart before completion reports this job as interrupted
     console.info(`[export] queued job ${job.id} (${job.categoryIds.length} categories, ${blob.email})`);
     return c.json({ id: job.id });
   });
