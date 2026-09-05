@@ -86,12 +86,6 @@ sudo systemctl restart asr-export
 Behind any reverse proxy, make sure it appends the client address to
 `x-forwarded-for` (the login rate limit trusts the last entry).
 
-## Status
-
-Core app complete and verified end-to-end against a real account
-(~387 documents, ~171 MB). Live in production at
-[asr.sfdye.com](https://asr.sfdye.com).
-
 ## License
 
 [MIT](LICENSE)
