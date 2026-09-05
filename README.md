@@ -26,7 +26,10 @@ Live at **https://asr.sfdye.com**.
 - **Export**: documents are fetched from the Habitap CDN (paced and retried)
   into a store-only zip on the server. Progress is live; the download
   supports pause/resume (HTTP Range) and keeps working for 24 hours — the
-  export page can be bookmarked and revisited without logging in.
+  export page can be bookmarked and revisited without logging in. Job
+  records persist to `DATA_DIR`, so links survive server restarts; an
+  export interrupted mid-run by a restart is reported as failed with a
+  re-run hint instead of vanishing.
 - **Hygiene**: zips and job records are hard-deleted after 24 h; logins are
   rate-limited; jobs queue fairly (2 concurrent, max 2 active per user).
 

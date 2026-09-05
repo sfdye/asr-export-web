@@ -5,7 +5,7 @@ import { HabitapClient, type HabitapConfig } from '../src/server/habitap/client.
 import { MockTransport } from '../src/server/habitap/mock.js';
 import { runExportJob } from '../src/server/jobs/worker.js';
 import { newJobId, type ExportJob } from '../src/server/jobs/queue.js';
-import { zipsDir } from '../src/server/config.js';
+import { zipsDir, jobsDir } from '../src/server/config.js';
 import { parseZip } from './zipread.js';
 import type { SessionBlob } from '../src/server/habitap/types.js';
 
@@ -19,8 +19,10 @@ const cfg: HabitapConfig = {
 };
 
 const created: string[] = [];
+const records: string[] = [];
 afterAll(() => {
   for (const p of created) fs.rmSync(p, { force: true });
+  for (const p of records) fs.rmSync(p, { force: true }); // job records persisted by the worker
 });
 
 async function loginBlob(transport: MockTransport): Promise<SessionBlob> {
@@ -48,6 +50,7 @@ describe('export worker (end-to-end against mock Habitap)', () => {
     const blob = await loginBlob(transport);
     const job = makeJob(blob, [1, 2, 3]);
     created.push(path.join(zipsDir, `${job.id}.zip`));
+    records.push(path.join(jobsDir, `${job.id}.json`));
 
     await runExportJob(job, cfg, transport, { paceMs: 0, retryBaseMs: 1 });
 
@@ -80,6 +83,7 @@ describe('export worker (end-to-end against mock Habitap)', () => {
     const blob = await loginBlob(transport);
     const job = makeJob(blob, [3]); // Circulars only
     created.push(path.join(zipsDir, `${job.id}.zip`));
+    records.push(path.join(jobsDir, `${job.id}.json`));
 
     await runExportJob(job, cfg, transport, { paceMs: 0, retryBaseMs: 1 });
     expect(job.status).toBe('done');
@@ -97,6 +101,7 @@ describe('export worker (end-to-end against mock Habitap)', () => {
       account: { blockCode: 'AVESOU11', condoId: 32 },
     };
     const job = makeJob(blob, [1]);
+    records.push(path.join(jobsDir, `${job.id}.json`));
 
     await runExportJob(job, cfg, transport, { paceMs: 0, retryBaseMs: 1 });
     expect(job.status).toBe('failed');

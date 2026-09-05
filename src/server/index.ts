@@ -9,6 +9,7 @@ import { MockTransport } from './habitap/mock.js';
 import { JobQueue } from './jobs/queue.js';
 import { runExportJob } from './jobs/worker.js';
 import { startSweeper } from './jobs/sweeper.js';
+import { loadJobRecords } from './jobs/store.js';
 import { authRoutes } from './routes/auth.js';
 import { catalogRoutes } from './routes/catalog.js';
 import { exportRoutes } from './routes/export.js';
@@ -16,6 +17,11 @@ import type { Services } from './services.js';
 
 const transport = config.mock ? new MockTransport() : { request: realTransportRequest };
 const queue = new JobQueue((job) => runExportJob(job, config.habitap, transport), 2);
+const restoredJobs = loadJobRecords();
+if (restoredJobs.length) {
+  queue.restore(restoredJobs);
+  console.info(`[jobs] restored ${restoredJobs.length} job record(s) from disk`);
+}
 const limiter = new RateLimiter(10, 10 * 60 * 1000); // 10 login attempts / 10 min / IP
 
 const svc: Services = {

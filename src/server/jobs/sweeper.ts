@@ -1,28 +1,38 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { zipsDir } from '../config.js';
+import { jobsDir, zipsDir } from '../config.js';
 import type { JobQueue } from './queue.js';
+import { removeJobRecord } from './store.js';
 
-// TTL sweeper: drops finished job records past the TTL and deletes any
-// orphaned zip files in the zips dir (crash leftovers; a done job's zip is
-// deleted here once its mtime passes the TTL). Runs on boot and hourly.
-// Running/queued jobs are never touched — their zip is being written.
+// TTL sweeper: drops finished job records past the TTL (zip + persisted
+// record) and deletes any orphaned files in the zips/jobs dirs (crash
+// leftovers; a done job's zip is deleted here once its mtime passes the
+// TTL). Runs on boot and hourly. Running/queued jobs are never touched —
+// their zip is being written.
 
 export function sweepOnce(queue: JobQueue, ttlMs: number): void {
-  const { ids, freedBytes } = queue.sweep(ttlMs);
+  const { ids, zipPaths, freedBytes } = queue.sweep(ttlMs);
+  for (const id of ids) removeJobRecord(id);
   let orphans = 0;
-  try {
-    for (const f of fs.readdirSync(zipsDir)) {
-      const p = path.join(zipsDir, f);
-      try {
-        const st = fs.statSync(p);
-        if (Date.now() - st.mtimeMs > ttlMs) {
-          fs.rmSync(p, { force: true });
-          orphans++;
-        }
-      } catch {}
-    }
-  } catch {}
+  for (const p of zipPaths) {
+    try {
+      fs.rmSync(p, { force: true });
+    } catch {}
+  }
+  for (const dir of [zipsDir, jobsDir]) {
+    try {
+      for (const f of fs.readdirSync(dir)) {
+        const p = path.join(dir, f);
+        try {
+          const st = fs.statSync(p);
+          if (Date.now() - st.mtimeMs > ttlMs) {
+            fs.rmSync(p, { force: true });
+            orphans++;
+          }
+        } catch {}
+      }
+    } catch {}
+  }
   const freedMb = (freedBytes / 1048576).toFixed(1);
   if (ids.length || orphans) console.info(`[sweeper] removed ${ids.length} job(s), ${orphans} orphan file(s), ${freedMb} MB freed`);
 }

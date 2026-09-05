@@ -6,6 +6,7 @@ import { collectStream, type Transport } from '../habitap/transport.js';
 import type { SessionBlob } from '../habitap/types.js';
 import type { ExportJob } from './queue.js';
 import { zipsDir } from '../config.js';
+import { saveJobRecord } from './store.js';
 import { StoreZipWriter } from './zip.js';
 
 // The export worker: walks the selected categories, fetches each document
@@ -28,10 +29,19 @@ export async function runExportJob(
   opts: WorkerOpts = {},
 ): Promise<void> {
   const { paceMs, retryBaseMs, fileCapBytes } = { ...DEFAULTS, ...opts };
+  if (!job.blob) {
+    // unreachable in practice: only freshly-created jobs (which always carry
+    // a session) are pumped; restored-from-disk jobs are terminal
+    job.status = 'failed';
+    job.error = 'no session';
+    job.finishedAt = Date.now();
+    return;
+  }
   const client = clientFromSession(job.blob, cfg, transport);
   const zipPath = path.join(zipsDir, `${job.id}.zip`);
   job.zipPath = zipPath;
   job.zipName = exportZipName(job.blob.account.unitNo);
+  saveJobRecord(job); // running marker: a restart reports this job as interrupted
 
   let writer: StoreZipWriter | null = null;
   try {
@@ -95,6 +105,7 @@ export async function runExportJob(
     job.status = 'done';
     job.finishedAt = Date.now();
     job.progress.currentFile = undefined;
+    saveJobRecord(job);
   } catch (e) {
     if (writer) writer.abort();
     job.status = 'failed';
@@ -108,6 +119,7 @@ export async function runExportJob(
       fs.rmSync(zipPath, { force: true }); // partial zips of failed jobs are useless
     } catch {}
     job.zipPath = undefined;
+    saveJobRecord(job);
   }
 }
 
