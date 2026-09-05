@@ -1,5 +1,9 @@
 # Production Caddyfile (asr.sfdye.com, DigitalOcean droplet).
 #
+# NOTE: reference copy only — the deploy flow does not install this file.
+# The live config is /etc/caddy/Caddyfile on the droplet; keep the two in
+# sync by hand when changing one.
+#
 # Cloudflare proxies the domain, so the peer Caddy sees is a Cloudflare edge,
 # not the visitor. CF-Connecting-IP is Cloudflare's authoritative record of
 # the real client address — rewrite x-forwarded-for with it so the app's
