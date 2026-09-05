@@ -1,0 +1,18 @@
+# Production Caddyfile (asr.sfdye.com, DigitalOcean droplet).
+#
+# Cloudflare proxies the domain, so the peer Caddy sees is a Cloudflare edge,
+# not the visitor. CF-Connecting-IP is Cloudflare's authoritative record of
+# the real client address — rewrite x-forwarded-for with it so the app's
+# login rate limit (which trusts the last XFF entry) keys on the visitor.
+#
+# This is only safe because ufw restricts 80/443 to Cloudflare's IP ranges
+# (https://www.cloudflare.com/ips/): requests hitting the droplet IP directly
+# are dropped, so a forged CF-Connecting-IP header can never reach Caddy.
+# Cloudflare also rejects client-supplied CF-* headers at the edge.
+
+asr.sfdye.com {
+	encode zstd gzip
+	reverse_proxy localhost:3000 {
+		header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}
+	}
+}
