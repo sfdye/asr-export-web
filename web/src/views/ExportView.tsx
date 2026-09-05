@@ -9,16 +9,21 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
   useEffect(() => {
     let stop = false;
     let timer: ReturnType<typeof setTimeout>;
+    let misses = 0; // tolerate transient poll failures (network blips, restarts)
 
     async function poll() {
       try {
         const j = await api.job(jobId);
         if (stop) return;
+        misses = 0;
         setJob(j);
         if (j.status === 'done' || j.status === 'failed') return; // stop polling on terminal states
       } catch (e) {
-        if (!stop) setError(e instanceof Error ? e.message : 'lost track of the export');
-        return;
+        if (stop) return;
+        if (++misses >= 8) {
+          setError(e instanceof Error ? e.message : 'lost track of the export');
+          return;
+        }
       }
       timer = setTimeout(poll, 1000);
     }

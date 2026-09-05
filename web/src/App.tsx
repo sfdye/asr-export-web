@@ -38,7 +38,8 @@ export function App() {
       setCatalog(cat);
       setStep('select');
     } catch (e) {
-      // session ok but catalog failed → still show select with retry
+      // catalog fetch failed (session may still be fine) → login screen with
+      // the error; a still-valid session resumes on the next page load
       setStep('login');
       setError(e instanceof Error ? e.message : 'failed to load documents');
     }

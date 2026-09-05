@@ -18,6 +18,7 @@ interface CacheEntry {
 }
 
 const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_MAX = 128; // distinct emails kept; FIFO-evicted beyond that
 const HEAD_CONCURRENCY = 4;
 const cache = new Map<string, CacheEntry>();
 
@@ -36,6 +37,10 @@ async function entriesFor(blob: SessionBlob, svc: Services): Promise<EntriesResu
   try {
     const entries = dedupCatalog(await client.catalog(block));
     cache.set(blob.email, { at: Date.now(), categories: entries, sizes: new Map(), inflight: new Map() });
+    if (cache.size > CACHE_MAX) {
+      const oldest = cache.keys().next().value;
+      if (oldest && oldest !== blob.email) cache.delete(oldest);
+    }
     return { ok: true, entries };
   } catch (e) {
     const status = (e as { status?: number }).status;

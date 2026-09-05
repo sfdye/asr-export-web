@@ -77,7 +77,8 @@ export function exportRoutes(svc: Services): Hono {
       if (m && !(m[1] === '' && m[2] === '')) {
         if (m[1] === '') {
           const suffix = Number(m[2]);
-          start = suffix === 0 || suffix > size ? -1 : size - suffix;
+          if (suffix === 0) start = -1; // "bytes=-0" is unsatisfiable (RFC 7233)
+          else start = Math.max(0, size - suffix); // suffix ≥ size → the whole file
         } else {
           start = Number(m[1]);
           end = m[2] === '' ? size - 1 : Math.min(Number(m[2]), size - 1);

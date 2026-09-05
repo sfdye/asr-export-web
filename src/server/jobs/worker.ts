@@ -74,9 +74,12 @@ export async function runExportJob(
           job.progress.failed++;
           job.progress.done = ++n;
         } else {
-          const ok = await fetchIntoZip(client, entryName, doc.filePath!, { retryBaseMs, fileCapBytes }, (buf) => addEntry(entryName, buf));
-          if (!ok) {
-            job.failedFiles.push({ path: entryName, reason: 'download failed after retries' });
+          const result = await fetchIntoZip(client, entryName, doc.filePath!, { retryBaseMs, fileCapBytes }, (buf) => addEntry(entryName, buf));
+          if (result !== 'ok') {
+            job.failedFiles.push({
+              path: entryName,
+              reason: result === 'cap' ? 'file exceeds the single-file size cap' : 'download failed after retries',
+            });
             job.progress.failed++;
           }
           job.progress.done = ++n;
@@ -108,32 +111,34 @@ export async function runExportJob(
   }
 }
 
+type FetchResult = 'ok' | 'retries' | 'cap';
+
 async function fetchIntoZip(
   client: HabitapClient,
   entryName: string,
   url: string,
   opts: { retryBaseMs: number; fileCapBytes: number },
   write: (buf: Buffer) => void,
-): Promise<boolean> {
+): Promise<FetchResult> {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const { stream } = await client.downloadFile(url);
       const { buffer, bytes } = await collectStream(stream, opts.fileCapBytes);
       if (bytes > opts.fileCapBytes) {
         console.warn(`[job] ${entryName}: ${(bytes / 1048576).toFixed(0)} MB exceeds the single-file cap, skipping`);
-        return false;
+        return 'cap';
       }
       write(buffer);
-      return true;
+      return 'ok';
     } catch (e) {
       if (attempt === 3) {
         console.warn(`[job] ${entryName}: ${String(e instanceof Error ? e.message : e).slice(0, 120)}`);
-        return false;
+        return 'retries';
       }
       await sleep(opts.retryBaseMs * attempt);
     }
   }
-  return false;
+  return 'retries';
 }
 
 function exportZipName(unitNo?: string): string {

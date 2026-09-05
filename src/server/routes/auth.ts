@@ -7,7 +7,11 @@ export function authRoutes(svc: Services): Hono {
   const app = new Hono();
 
   app.post('/login', async (c) => {
-    const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() || 'local';
+    // deployment is always behind our reverse proxy, which appends the real
+    // client address to x-forwarded-for — so trust the LAST entry (the first
+    // is client-supplied and spoofable)
+    const xff = c.req.header('x-forwarded-for');
+    const ip = (xff ? xff.split(',').pop() : '')?.trim() || 'local';
     if (!svc.limiter.hit(`login:${ip}`)) {
       const retryInMin = Math.ceil(svc.limiter.msUntilReset(`login:${ip}`) / 60000);
       return c.json({ error: `too many attempts — try again in ~${retryInMin} minute(s)` }, 429);
