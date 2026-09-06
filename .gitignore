@@ -7,3 +7,5 @@ test-data/
 *.log
 .DS_Store
 .vite/
+
+.playwright-mcp/

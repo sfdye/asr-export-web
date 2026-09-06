@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useT } from '../i18n.js';
 
 export function OtpView({
   email,
@@ -11,6 +12,7 @@ export function OtpView({
   onSubmit: (otp: string) => void;
   onBack: () => void;
 }) {
+  const { t } = useT();
   const [otp, setOtp] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -27,11 +29,11 @@ export function OtpView({
 
   return (
     <form className="card" onSubmit={submit}>
-      <h1>One-time code</h1>
+      <h1>{t('otpTitle')}</h1>
       <p className="muted">{message}</p>
-      <p className="muted small">Sent to {email} · valid for a few minutes</p>
+      <p className="muted small">{t('otpSentTo', { email })}</p>
       <label>
-        Code
+        {t('code')}
         <input
           type="text"
           inputMode="numeric"
@@ -44,10 +46,10 @@ export function OtpView({
         />
       </label>
       <button className="primary" type="submit" disabled={busy || !/^\d{4,8}$/.test(otp)}>
-        {busy ? 'Verifying…' : 'Verify'}
+        {busy ? t('verifying') : t('verify')}
       </button>
       <button type="button" className="link" onClick={onBack}>
-        ← back to sign in
+        {t('backToSignIn')}
       </button>
     </form>
   );

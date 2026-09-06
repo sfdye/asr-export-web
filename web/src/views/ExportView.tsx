@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, downloadUrl, formatBytes, type JobView } from '../api.js';
+import { useT } from '../i18n.js';
 
 // one-shot celebratory confetti on the done screen; CSS-only, no deps
 function Confetti() {
@@ -41,6 +42,7 @@ function Confetti() {
 }
 
 export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onFinished: () => void; onFailed: () => void }) {
+  const { t } = useT();
   const [job, setJob] = useState<JobView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [gone, setGone] = useState(false);
@@ -60,7 +62,7 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
       } catch (e) {
         if (stop) return;
         if (++misses >= 8) {
-          setError(e instanceof Error ? e.message : 'lost track of the export');
+          setError(e instanceof Error ? e.message : t('lostTrack'));
           return;
         }
       }
@@ -71,15 +73,15 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
       stop = true;
       clearTimeout(timer);
     };
-  }, [jobId]);
+  }, [jobId, t]);
 
   if (error) {
     return (
       <div className="card center">
-        <h1>Export problem</h1>
+        <h1>{t('exportProblem')}</h1>
         <div className="alert error">{error}</div>
-        <p className="muted small">If it says “not found or expired”, the export or its zip passed the 24-hour mark.</p>
-        <button className="primary" onClick={onFailed}>Back to my documents</button>
+        <p className="muted small">{t('expiredHint')}</p>
+        <button className="primary" onClick={onFailed}>{t('backToDocs')}</button>
       </div>
     );
   }
@@ -88,7 +90,7 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
     return (
       <div className="card center">
         <div className="spinner" aria-label="loading" />
-        <p className="muted">Starting your export…</p>
+        <p className="muted">{t('startingExport')}</p>
       </div>
     );
   }
@@ -98,16 +100,16 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
     const pct = total > 0 ? Math.round((done / total) * 100) : null;
     return (
       <div className="card">
-        <h1>Preparing your zip…</h1>
-        <p className="muted">Keep this page open — or bookmark it and come back later (it works for 24 hours).</p>
+        <h1>{t('preparingZip')}</h1>
+        <p className="muted">{t('keepOpen')}</p>
         <div className={`progress-track ${pct === null ? 'indeterminate' : ''}`}>
           {pct !== null && <div className="progress-fill" style={{ width: `${pct}%` }} />}
         </div>
         <p className="muted">
-          {pct !== null ? `${done} of ${total} documents (${pct}%)` : 'listing documents…'}
-          {failed > 0 && <span className="warn"> · {failed} failed</span>}
+          {pct !== null ? t('progressDone', { done, total, pct }) : t('listing')}
+          {failed > 0 && <span className="warn">{t('nFailed', { n: failed })}</span>}
         </p>
-        {currentFile && <p className="muted small truncate">fetching: {currentFile}</p>}
+        {currentFile && <p className="muted small truncate">{t('fetching', { file: currentFile })}</p>}
       </div>
     );
   }
@@ -115,30 +117,31 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
   if (job.status === 'failed') {
     return (
       <div className="card center">
-        <h1>Export failed</h1>
-        <div className="alert error">{job.error ?? 'something went wrong'}</div>
-        <button className="primary" onClick={onFailed}>Back to my documents</button>
+        <h1>{t('exportFailed')}</h1>
+        <div className="alert error">{job.error ?? t('somethingWrong')}</div>
+        <button className="primary" onClick={onFailed}>{t('backToDocs')}</button>
       </div>
     );
   }
 
   // done
   const failedList = job.failedFiles ?? [];
+  const okDocs = job.progress.total - job.progress.failed;
   return (
     <div className="card center">
       <Confetti />
-      <h1>Your zip is ready</h1>
+      <h1>{t('zipReady')}</h1>
       <p className="muted">
-        {job.progress.total - job.progress.failed} of {job.progress.total} documents{job.zipSize ? ` · ${formatBytes(job.zipSize)}` : ''}
+        {t('doneDocs', { n: okDocs, total: job.progress.total })}{job.zipSize ? ` · ${formatBytes(job.zipSize)}` : ''}
       </p>
       <a className="primary download" href={downloadUrl(job.id)} download={job.zipName}>
-        Download zip
+        {t('downloadZip')}
       </a>
-      <p className="muted small">The download link works for 24 hours — after that your zip is deleted from our server.</p>
+      <p className="muted small">{t('deletedAfter24h')}</p>
       {failedList.length > 0 && (
         <details className="failed-details">
           <summary className="warn">
-            {failedList.length} document{failedList.length > 1 ? 's' : ''} could not be fetched
+            {t(failedList.length > 1 ? 'couldNotFetch' : 'couldNotFetchOne', { n: failedList.length })}
           </summary>
           <ul>
             {failedList.map((f) => (
@@ -149,7 +152,7 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
           </ul>
         </details>
       )}
-      <button className="link" onClick={onFinished}>Export something else</button>
+      <button className="link" onClick={onFinished}>{t('exportSomethingElse')}</button>
     </div>
   );
 }

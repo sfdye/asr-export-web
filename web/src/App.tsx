@@ -1,13 +1,38 @@
 import { useEffect, useState } from 'react';
 import { api, type Account, type Catalog } from './api.js';
+import { useT, type Lang } from './i18n.js';
 import { LoginView } from './views/LoginView.js';
 import { OtpView } from './views/OtpView.js';
 import { SelectView } from './views/SelectView.js';
 import { ExportView } from './views/ExportView.js';
 
+function LangSwitch() {
+  const { lang, setLang } = useT();
+  const options: { value: Lang; label: string }[] = [
+    { value: 'en', label: 'EN' },
+    { value: 'zh', label: '中文' },
+  ];
+  return (
+    <div className="lang-switch" role="group" aria-label="Language">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          className={lang === o.value ? 'on' : ''}
+          aria-pressed={lang === o.value}
+          onClick={() => setLang(o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 type Step = 'boot' | 'login' | 'otp' | 'select' | 'export';
 
 export function App() {
+  const { t } = useT();
   const [step, setStep] = useState<Step>('boot');
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
@@ -41,7 +66,7 @@ export function App() {
       // catalog fetch failed (session may still be fine) → login screen with
       // the error; a still-valid session resumes on the next page load
       setStep('login');
-      setError(e instanceof Error ? e.message : 'failed to load documents');
+      setError(e instanceof Error ? e.message : t('loadFailed'));
     }
   }
 
@@ -59,7 +84,7 @@ export function App() {
       setPassword(''); // never keep it longer than the login handshake
       await loadCatalog();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'login failed');
+      setError(err instanceof Error ? err.message : t('loginFailed'));
     }
   }
 
@@ -79,7 +104,7 @@ export function App() {
       setJobId(id);
       setStep('export');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'could not start the export');
+      setError(e instanceof Error ? e.message : t('exportStartFailed'));
     }
   }
 
@@ -92,7 +117,7 @@ export function App() {
   if (step === 'boot') {
     return (
       <div className="container">
-        <div className="card center muted">Checking your session…</div>
+        <div className="card center muted">{t('boot')}</div>
       </div>
     );
   }
@@ -100,8 +125,11 @@ export function App() {
   return (
     <div className="container">
       <header className="site-header">
-        <div className="brand">ASR Document Export</div>
-        <div className="brand-sub">Avenue South Residence · Habitap backup</div>
+        <div>
+          <div className="brand">ASR Document Export</div>
+          <div className="brand-sub">{t('brandSub')}</div>
+        </div>
+        <LangSwitch />
       </header>
 
       {error && (
@@ -124,7 +152,7 @@ export function App() {
       )}
 
       <footer className="site-footer">
-        <p>Downloads are prepared on our server, deleted after 24 hours, and never shared. Your password is not stored.</p>
+        <p>{t('footer')}</p>
       </footer>
     </div>
   );
