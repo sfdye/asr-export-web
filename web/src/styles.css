@@ -54,7 +54,14 @@ body {
   color: var(--muted);
   font: inherit;
   font-size: 13px;
-  padding: 4px 12px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 7px 0;
+  min-width: 56px;
+  width: auto;
+  margin-top: 0;
+  text-align: center;
+  white-space: nowrap;
   cursor: pointer;
 }
 
