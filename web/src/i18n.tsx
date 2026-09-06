@@ -19,7 +19,7 @@ const en = {
   boot: 'Checking your session…',
   brandSub: 'Avenue South Residence · Habitap backup',
   footer:
-    'Downloads are prepared on our server, deleted after 24 hours, and never shared. Your password is not stored.',
+    'Downloads are prepared on the server, deleted after 24 hours, and never shared. Your password is not stored.',
 
   loginTitle: 'Sign in to Habitap',
   loginHint: 'Use your Habitap account (the app you use for ASR documents). New devices receive a one-time email code.',
@@ -70,7 +70,7 @@ const en = {
   zipReady: 'Your file is ready',
   doneDocs: '{n} of {total} documents',
   downloadZip: 'Download now',
-  deletedAfter24h: 'The download link works for 24 hours — after that your file is deleted from our server.',
+  deletedAfter24h: 'The download link works for 24 hours — after that your file is deleted from the server.',
   couldNotFetch: '{n} documents could not be fetched',
   couldNotFetchOne: '{n} document could not be fetched',
   exportSomethingElse: 'Export something else',
@@ -85,7 +85,7 @@ export type TKey = keyof typeof en;
 const zh: Record<TKey, string> = {
   boot: '正在检查登录状态…',
   brandSub: 'Avenue South Residence · Habitap 备份',
-  footer: '文件在我们服务器上打包，24 小时后自动删除，绝不对外共享。我们不会存储您的密码。',
+  footer: '文件在服务器上打包，24 小时后自动删除，绝不对外共享。您的密码不会被存储。',
 
   loginTitle: '登录 Habitap',
   loginHint: '使用您的 Habitap 账号（您平时用来查看 ASR 文件的应用）。首次在新设备登录时，系统会向您的邮箱发送一次性验证码。',
@@ -102,7 +102,7 @@ const zh: Record<TKey, string> = {
   backToSignIn: '← 返回登录',
 
   resident: '住户',
-  unit: '单位 {no}',
+  unit: '门牌号 {no}',
   refresh: '刷新',
   signOut: '退出登录',
   yourDocuments: '您的文件',
@@ -136,7 +136,7 @@ const zh: Record<TKey, string> = {
   zipReady: '您的文件已准备就绪',
   doneDocs: '{total} 份文件中的 {n} 份',
   downloadZip: '立即下载',
-  deletedAfter24h: '下载链接 24 小时内有效，之后文件将从我们的服务器上删除。',
+  deletedAfter24h: '下载链接 24 小时内有效，之后文件将从服务器上删除。',
   couldNotFetch: '{n} 份文件获取失败',
   couldNotFetchOne: '{n} 份文件获取失败',
   exportSomethingElse: '导出其他文件',
