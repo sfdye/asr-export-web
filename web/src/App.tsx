@@ -8,24 +8,16 @@ import { ExportView } from './views/ExportView.js';
 
 function LangSwitch() {
   const { lang, setLang } = useT();
-  const options: { value: Lang; label: string }[] = [
-    { value: 'en', label: 'EN' },
-    { value: 'zh', label: '中文' },
-  ];
+  const target: Lang = lang === 'en' ? 'zh' : 'en';
   return (
-    <div className="lang-switch" role="group" aria-label="Language">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          className={lang === o.value ? 'on' : ''}
-          aria-pressed={lang === o.value}
-          onClick={() => setLang(o.value)}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <button
+      type="button"
+      className="lang-toggle"
+      onClick={() => setLang(target)}
+      aria-label={lang === 'en' ? '切换到中文' : 'Switch to English'}
+    >
+      {target === 'zh' ? '中文' : 'EN'}
+    </button>
   );
 }
 
