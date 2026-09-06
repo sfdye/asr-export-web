@@ -32,6 +32,8 @@ Live at **https://asr.sfdye.com**.
   re-run hint instead of vanishing.
 - **Hygiene**: zips and job records are hard-deleted after 24 h; logins are
   rate-limited; jobs queue fairly (2 concurrent, max 2 active per user).
+- **Bilingual UI**: English and 简体中文 with a header toggle; defaults to
+  the device locale and remembers the choice (`localStorage`).
 
 ## Try it locally
 

@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useT } from '../i18n.js';
 
 export function LoginView({ onLogin, initialEmail }: { onLogin: (email: string, password: string) => void; initialEmail: string }) {
+  const { t } = useT();
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -18,18 +20,18 @@ export function LoginView({ onLogin, initialEmail }: { onLogin: (email: string, 
 
   return (
     <form className="card" onSubmit={submit}>
-      <h1>Sign in to Habitap</h1>
-      <p className="muted">Use your Habitap account (the app you use for ASR documents). New devices receive a one-time email code.</p>
+      <h1>{t('loginTitle')}</h1>
+      <p className="muted">{t('loginHint')}</p>
       <label>
-        Email
+        {t('email')}
         <input type="email" inputMode="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
       </label>
       <label>
-        Password
+        {t('password')}
         <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </label>
       <button className="primary" type="submit" disabled={busy || !email.trim() || !password}>
-        {busy ? 'Signing in…' : 'Sign in'}
+        {busy ? t('signingIn') : t('signIn')}
       </button>
     </form>
   );

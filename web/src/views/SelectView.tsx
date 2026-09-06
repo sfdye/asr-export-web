@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, formatBytes, type Catalog } from '../api.js';
+import { useT } from '../i18n.js';
 
 export function SelectView({
   catalog,
@@ -12,6 +13,7 @@ export function SelectView({
   onLogout: () => void;
   onRefresh: () => void;
 }) {
+  const { t } = useT();
   const { account, categories } = catalog;
   const [checked, setChecked] = useState<Set<number>>(() => new Set(categories.map((c) => c.id)));
   const [openCats, setOpenCats] = useState<Set<number>>(new Set());
@@ -115,26 +117,24 @@ export function SelectView({
     <div className="card">
       <div className="account-row">
         <div>
-          <div className="account-name">{account.fullName ?? 'Resident'}</div>
+          <div className="account-name">{account.fullName ?? t('resident')}</div>
           <div className="muted small">
-            {account.unitNo ? `Unit ${account.unitNo}` : ''}
+            {account.unitNo ? t('unit', { no: account.unitNo }) : ''}
             {account.condoName ? ` · ${account.condoName}` : ''}
           </div>
         </div>
         <div className="account-actions">
-          <button className="link" onClick={onRefresh}>Refresh</button>
-          <button className="link" onClick={onLogout}>Sign out</button>
+          <button className="link" onClick={onRefresh}>{t('refresh')}</button>
+          <button className="link" onClick={onLogout}>{t('signOut')}</button>
         </div>
       </div>
 
-      <h1>Your documents</h1>
-      <p className="muted">
-        {totalDocs} documents in {categories.length} categories. Everything is bundled into a single zip.
-      </p>
+      <h1>{t('yourDocuments')}</h1>
+      <p className="muted">{t('docsInCats', { total: totalDocs, count: categories.length })}</p>
 
       <div className="toolbar">
-        <button className="link" onClick={() => setAll(true)}>Select all</button>
-        <button className="link" onClick={() => setAll(false)}>Clear</button>
+        <button className="link" onClick={() => setAll(true)}>{t('selectAll')}</button>
+        <button className="link" onClick={() => setAll(false)}>{t('clear')}</button>
       </div>
 
       <ul className="categories">
@@ -149,7 +149,7 @@ export function SelectView({
                   <span className="category-text">
                     <span className="category-name">{c.name}</span>
                     <span className="category-sub">
-                      {c.count} {c.count === 1 ? 'document' : 'documents'}
+                      {t(c.count === 1 ? 'nDocumentsOne' : 'nDocuments', { n: c.count })}
                       {total != null ? ` · ${formatBytes(total)}` : ''}
                     </span>
                   </span>
@@ -158,7 +158,7 @@ export function SelectView({
                   type="button"
                   className="expand"
                   aria-expanded={open}
-                  aria-label={open ? `Hide documents in ${c.name}` : `Show documents in ${c.name}`}
+                  aria-label={open ? t('hideDocsIn', { name: c.name }) : t('showDocsIn', { name: c.name })}
                   onClick={() => toggleOpen(c.id)}
                 >
                   <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
@@ -173,7 +173,7 @@ export function SelectView({
                       <li key={d.id} className={d.kind === 'link' ? 'link-doc' : ''}>
                         <span className="doc-caption">
                           {d.kind === 'link' ? '↗ ' : ''}
-                          {d.caption || '(untitled)'}
+                          {d.caption || t('untitled')}
                         </span>
                         <span className="doc-size">{docSize(c.id, d.id, d.kind)}</span>
                       </li>
@@ -188,11 +188,11 @@ export function SelectView({
 
       <div className="sticky-footer">
         <div className="muted small">
-          {selectedDocs} of {totalDocs} documents selected
-          {selectedBytes != null ? ` · ≈ ${formatBytes(selectedBytes)} zip` : estimating ? ' · estimating size…' : ''}
+          {t('selectedOf', { n: selectedDocs, total: totalDocs })}
+          {selectedBytes != null ? t('zipSize', { size: formatBytes(selectedBytes) }) : estimating ? t('estimating') : ''}
         </div>
         <button className="primary" onClick={start} disabled={busy || checked.size === 0}>
-          {busy ? 'Starting…' : `Export ${selectedDocs} documents`}
+          {busy ? t('starting') : t('exportNDocs', { n: selectedDocs })}
         </button>
       </div>
     </div>
