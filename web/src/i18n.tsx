@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 export type Lang = 'en' | 'zh';
 
@@ -164,18 +164,20 @@ export function LangProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  function setLang(l: Lang) {
-    setLangState(l);
-    try {
-      localStorage.setItem(STORAGE_KEY, l);
-    } catch {
-      /* ignore storage failures — switch still works for the session */
+  const value = useMemo(() => {
+    function setLang(l: Lang) {
+      setLangState(l);
+      try {
+        localStorage.setItem(STORAGE_KEY, l);
+      } catch {
+        /* ignore storage failures — switch still works for the session */
+      }
     }
-  }
+    const t = (key: TKey, vars?: Record<string, string | number>) => interpolate(dict[lang][key], vars);
+    return { lang, setLang, t };
+  }, [lang]);
 
-  const t = (key: TKey, vars?: Record<string, string | number>) => interpolate(dict[lang][key], vars);
-
-  return <LangContext.Provider value={{ lang, setLang, t }}>{children}</LangContext.Provider>;
+  return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
 
 export function useT() {

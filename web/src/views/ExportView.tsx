@@ -73,7 +73,7 @@ export function ExportView({ jobId, onFinished, onFailed }: { jobId: string; onF
       stop = true;
       clearTimeout(timer);
     };
-  }, [jobId]);
+  }, [jobId, t]);
 
   if (error) {
     return (
