@@ -39,35 +39,25 @@ body {
   gap: 12px;
 }
 
-.lang-switch {
-  display: flex;
+/* single flip button; overrides the global button rule (width/margin/padding) */
+.lang-toggle {
   border: 1px solid var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-  margin-top: 4px;
-  flex-shrink: 0;
-}
-
-.lang-switch button {
-  border: none;
-  background: transparent;
-  color: var(--muted);
+  background: var(--card);
+  color: var(--navy);
   font: inherit;
   font-size: 13px;
   font-weight: 500;
   line-height: 1;
-  padding: 7px 0;
-  min-width: 56px;
+  padding: 7px 12px;
   width: auto;
-  margin-top: 0;
-  text-align: center;
-  white-space: nowrap;
+  margin-top: 4px;
+  border-radius: 999px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.lang-switch button.on {
-  background: var(--navy);
-  color: #fff;
+.lang-toggle:hover {
+  background: #eef2f5;
 }
 
 .brand {
